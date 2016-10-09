@@ -1,0 +1,2 @@
+---
+- hosts: baal1, baal2 

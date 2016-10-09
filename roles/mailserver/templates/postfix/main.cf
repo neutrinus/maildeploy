@@ -1,0 +1,176 @@
+myorigin = /etc/mailname
+
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+
+mydestination =
+relayhost = 
+smtpd_relay_restrictions =
+
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+
+smtpd_banner = $myhostname ESMTP
+
+delay_warning_time = 24h
+                   
+smtpd_recipient_limit = 50                 
+mailbox_size_limit = 0
+message_size_limit = 0    
+virtual_mailbox_limit = 0 
+
+smtpd_use_tls=yes
+#smtpd_tls_auth_only = yes
+smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtpd_tls_loglevel = 1
+smtpd_tls_security_level = may
+smtpd_tls_received_header = yes
+
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+recipient_delimiter = +
+
+inet_interfaces = all
+inet_protocols = ipv4
+
+mailbox_transport=virtual
+maildrop_destination_recipient_limit=1
+virtual_minimum_uid=5000
+virtual_gid_maps=static:5000
+virtual_uid_maps=static:5000
+virtual_mailbox_base=/var/vmail
+
+virtual_mailbox_domains=pgsql:/etc/postfix/sql-domains.cf
+#virtual_mailbox_maps=pgsql:/etc/postfix/sql-mailboxes.cf
+virtual_alias_domains=pgsql:/etc/postfix/sql-domain-aliases.cf
+virtual_alias_maps=pgsql:/etc/postfix/sql-aliases.cf
+
+relay_domains = pgsql:/etc/postfix/sql-relaydomains.cf
+
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+transport_maps =
+    pgsql:/etc/postfix/sql-spliteddomains-transport.cf
+    pgsql:/etc/postfix/sql-relaydomains-transport.cf
+    #pgsql:/etc/postfix/sql-autoreplies-transport.cf
+
+
+unknown_local_recipient_reject_code = 550
+unverified_recipient_reject_code = 550
+unknown_address_reject_code = 550
+
+
+## SASL authentication through Dovecot
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+broken_sasl_auth_clients = yes
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_tls_security_options = noanonymous
+
+
+smtpd_delay_reject = yes
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+
+# MTA to MTA communication on Port 25. We expect (!) the other party to
+# specify messages as required by RFC 821.
+strict_rfc821_envelopes = yes
+
+# Verify cache setup
+address_verify_map = proxy:btree:$data_directory/verify_cache
+
+#proxy_write_maps =
+#    $smtp_sasl_auth_cache_name
+#    $lmtp_sasl_auth_cache_name
+#    $address_verify_map
+
+smtpd_client_restrictions = 
+    permit_sasl_authenticated
+    warn_if_reject reject_unknown_reverse_client_hostname
+    reject_non_fqdn_helo_hostname
+    reject_unauth_pipelining 
+    reject_invalid_helo_hostname 
+
+# Recipient restriction rules
+smtpd_recipient_restrictions =
+      reject_non_fqdn_recipient
+      reject_unknown_recipient_domain,
+      permit_mynetworks
+      permit_sasl_authenticated
+      check_recipient_access
+          pgsql:/etc/postfix/sql-maintain.cf
+          pgsql:/etc/postfix/sql-relay-recipient-verification.cf
+      reject_invalid_helo_hostname,
+      warn_if_reject reject_unverified_recipient,
+      reject_unauth_destination
+      reject_non_fqdn_sender
+      reject_non_fqdn_helo_hostname
+      check_policy_service unix:private/policy-spf
+
+
+smtpd_sender_login_maps =
+      pgsql:/etc/postfix/sql-sender-login-mailboxes.cf
+      pgsql:/etc/postfix/sql-sender-login-aliases.cf
+
+smtpd_sender_restrictions =
+      reject_sender_login_mismatch
+      reject_non_fqdn_sender,
+      reject_unknown_sender_domain,
+      permit
+
+## Postcreen settings
+postscreen_access_list =
+       permit_mynetworks
+postscreen_blacklist_action = enforce 
+
+postscreen_dnsbl_sites = 
+	zen.spamhaus.org*3 
+	bl.spameatingmonkey.net*2 
+	dnsbl.habl.org 
+	bl.spamcop.net 
+	dnsbl.sorbs.net 
+postscreen_dnsbl_threshold = 3 
+postscreen_dnsbl_action = enforce 
+postscreen_greet_banner = Welcome, please wait... 
+postscreen_greet_action = enforce
+postscreen_pipelining_enable = yes
+postscreen_pipelining_action = enforce
+postscreen_non_smtp_command_enable = yes
+postscreen_non_smtp_command_action = enforce
+postscreen_bare_newline_enable = yes
+postscreen_bare_newline_action = enforce
+
+
+# Milters
+smtpd_milters = unix:/clamav/clamav-milter.ctl, unix:/opendkim/opendkim.sock
+non_smtpd_milters = $smtpd_milters 
+milter_default_action = accept
+
+policy-spf_time_limit = 3600s
+
+
+# THROTLING
+# jednoczesnych połączeń dla danego klienta:
+smtpd_client_connection_count_limit = 1
+
+# 2 połączeń na minutę (dokładnie na anvil_rate_time_unit)
+smtpd_client_connection_rate_limit = 2
+anvil_rate_time_unit = 60s
+
+# 20 odbiorców na minutę:
+smtpd_client_recipient_rate_limit = 20
+
+# 20 wiadomości na minutę:
+smtpd_client_message_rate_limit = 20
+
+# zerwanie połączenia po 3 błędach (np. user unknown)
+smtpd_hard_error_limit = 3
+
+# po 3 błędach przytrzymanie klienta przez smtpd_error_sleep_time sekund:
+smtpd_soft_error_limit = 3
+smtpd_error_sleep_time = 30
+

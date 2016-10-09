@@ -1,0 +1,28 @@
+---
+
+- user: name=roundcube createhome=yes
+
+- file: state=directory path=/home/roundcube/app owner=roundcube
+
+- name: download roundcube
+  get_url:
+    url=https://downloads.sourceforge.net/project/roundcubemail/roundcubemail/1.1.4/roundcubemail-1.1.4-complete.tar.gz
+    dest=~roundcube/roundcubemail-1.1.4-complete.tar.gz
+  register: roundcube_download
+
+- name: unpack roundcube
+  unarchive: copy=no src=/home/roundcube/roundcubemail-1.1.4-complete.tar.gz dest=/home/roundcube/app/ 
+  when: roundcube_download.changed
+  become: true
+  become_user: roundcube
+  
+  
+- name: configure roundcube
+  template: src=config.inc.php dest=/home/roundcube/app/roundcubemail-1.1.4/config/ owner=roundcube
+  notify:
+    - restart uwsgi
+    
+#- name: init the db
+#  command: psql -U roundcube -f /home/roundcube/app/roundcubemail-1.1.4/SQL/postgres.initial.sql roundcube
+
+

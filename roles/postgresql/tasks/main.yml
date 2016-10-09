@@ -1,0 +1,47 @@
+---
+- name: install postgresql-9.4 packages
+  action: apt pkg={{item}}
+  with_items:
+      - postgresql-9.4
+      - postgresql-contrib-9.4
+      - python-psycopg2
+
+- name: configure 9.4/postgresql.conf
+  template: src=etc/postgresql/9.4/postgresql.conf dest=/etc/postgresql/9.4/main/postgresql.conf mode=0644 backup=yes
+  register: postgresql_conf
+
+- name: configure 9.4/pg_hba.conf
+  template: src=etc/postgresql/9.4/pg_hba.conf dest=/etc/postgresql/9.4/main/pg_hba.conf mode=0644 backup=yes
+  register: pg_hba_conf
+
+- name: configure postgresql logrotation
+  copy: src=etc/logrotate.d/postgresql-common dest=/etc/logrotate.d/
+
+- name: reload posgresql
+  service: name=postgresql state=reloaded
+  when: postgresql_conf.changed or pg_hba_conf.changed
+
+- name: make sure postgres is running
+  service: name=postgresql state=started
+
+- name: postgresql user modoboa
+  postgresql_user: name=modoboa password=modoboa
+  sudo: yes
+  sudo_user: postgres
+
+- name: postgresql database maildb
+  postgresql_db: name=maildb owner=modoboa state=present
+  become: yes
+  become_user: postgres
+  register: dbinit
+  
+- name: postgresql user roundcube
+  postgresql_user: name=roundcube password=roundcube
+  sudo: yes
+  sudo_user: postgres
+
+- name: postgresql database roundcube
+  postgresql_db: name=roundcube owner=roundcube state=present
+  become: yes
+  become_user: postgres
+  register: dbinit

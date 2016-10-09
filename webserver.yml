@@ -1,0 +1,4 @@
+---
+- name: install webserver on nodes
+  hosts: webserver
+  roles: [webserver]

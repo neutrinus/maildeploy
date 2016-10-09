@@ -1,0 +1,6 @@
+/var/log/postgresql/*.log {
+       copytruncate
+       notifempty
+       missingok
+       su root root
+}

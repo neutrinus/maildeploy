@@ -1,0 +1,4 @@
+---
+- name: install postgresql on nodes
+  hosts: postgresql
+  roles: [postgresql]

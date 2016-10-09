@@ -1,0 +1,16 @@
+---
+- name: update apt repositories cache
+  apt: update_cache=yes cache_valid_time=14400
+
+- name: install packages
+  apt: pkg={{item}} state=installed
+  with_items:
+    - nginx-full
+
+- template: src=etc/nginx/modoboa dest=/etc/nginx/sites-enabled/modoboa
+  register: nginx_config
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+  when: nginx_config.changed
+

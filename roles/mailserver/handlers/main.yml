@@ -1,0 +1,14 @@
+---
+
+- name: restart dovecot
+  service: name=dovecot state=restarted
+
+- name: restart postfix
+  service: name=postfix state=restarted
+
+- name: restart clamav-milter
+  service: name=clamav-milter state=restarted
+
+- name: restart opendkim
+  service: name=opendkim state=restarted
+

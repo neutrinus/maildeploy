@@ -1,0 +1,118 @@
+server {
+    listen 80;
+    server_name mail.webadventure.pl;
+    rewrite ^ https://$server_name$request_uri? permanent;
+}
+
+
+server {
+    listen 443 ssl;
+    ssl on;
+    keepalive_timeout 70;
+
+    server_name mail.webadventure.pl;
+    root /home/roundcube/app/roundcubemail-1.1.4;
+
+    access_log  /var/log/nginx/roundcube.access.log;
+    error_log /var/log/nginx/roundcube.error.log;
+
+
+    ssl_certificate     /etc/ssl/certs/ssl-cert-snakeoil.pem;
+    ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers RC4:HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_verify_depth 3;
+    client_max_body_size 50M;
+
+    index index.php index.html index.htm;
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+   location = /robots.txt {
+            allow all;
+            log_not_found off;
+            access_log off;
+   }
+
+   location ~ ^/webmail/(config|temp|logs)/ {
+                 deny all;
+   }
+   location ~ ^/(README|INSTALL|LICENSE|CHANGELOG|UPGRADING)$ {
+            deny all;
+   }
+   location ~ ^/(bin|SQL)/ {
+            deny all;
+   }
+
+   # Deny all attempts to access hidden files such as .htaccess, .htpasswd, .DS_Store (Mac).
+   location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+   }
+
+
+    location ~ .php$ {
+        gzip off;
+        include uwsgi_params;
+        uwsgi_param REDIRECT_STATUS 200; # required by php 5.3
+        uwsgi_pass unix:///home/roundcube/uwsgi.socket;
+        uwsgi_param UWSGI_SCHEME https;
+        uwsgi_modifier1 9; 
+    }
+
+}
+
+
+
+
+server {
+    listen 8443 ssl;
+    ssl on;
+    keepalive_timeout 70;
+
+    server_name localhost;
+    root /home/modoboa/mailadmin;
+
+    ssl_certificate     /etc/ssl/certs/ssl-cert-snakeoil.pem;
+    ssl_certificate_key /etc/ssl/private/ssl-cert-snakeoil.key;
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers RC4:HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_verify_depth 3;
+    client_max_body_size 50M;
+
+    access_log  /var/log/nginx/modoboa.access.log;
+    error_log /var/log/nginx/modoboa.error.log;
+
+    location /sitestatic {
+            autoindex on;
+            alias /home/modoboa/mailadmin/sitestatic;
+    }
+
+    # Whether or not Modoboa uses a media directory depends on how
+    # you configured Modoboa. It does not hurt to have this.
+    location /media {
+            autoindex on;
+            alias /home/modoboa;
+    }
+
+    # This denies access to any file that begins with
+    # ".ht". Apache's .htaccess and .htpasswd are such files. A
+    # Modoboa installed from scratch would not contain any such
+    # files, but you never know what the future holds.
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:///home/modoboa/uwsgi.socket;
+        uwsgi_param UWSGI_SCRIPT mailadmin.wsgi:application;
+        uwsgi_param UWSGI_SCHEME https;
+    }
+    
+}

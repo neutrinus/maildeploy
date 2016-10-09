@@ -1,0 +1,4 @@
+---
+- name: install mailserver on nodes
+  hosts: mailserver
+  roles: [mailserver]

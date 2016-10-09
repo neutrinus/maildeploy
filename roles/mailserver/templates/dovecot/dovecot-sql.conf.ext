@@ -1,0 +1,7 @@
+driver = pgsql
+connect = host=localhost dbname=maildb user=modoboa password=modoboa
+default_pass_scheme = CRYPT
+password_query = SELECT email AS user, password FROM core_user WHERE email='%u' and is_active
+user_query = SELECT '/var/mail/vmail/%Ld/%Ln' AS home, 5000 as uid, 5000 as gid, '*:bytes=' || mb.quota || 'M' AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE mb.address='%Ln' AND dom.name='%Ld'
+iterate_query = SELECT email AS username FROM core_user WHERE email<>''
+

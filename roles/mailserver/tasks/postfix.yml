@@ -1,0 +1,63 @@
+---
+
+- apt: pkg={{item}} state=installed
+  with_items:
+    - postfix
+    - postfix-pgsql
+    - libsasl2-modules
+    - sasl2-bin
+    - postfix-policyd-spf-python
+    - clamav-milter
+    - clamav-freshclam
+    - opendkim
+    - opendkim-tools
+    - arj
+    - bzip2
+    - cabextract
+    - cpio
+    - file
+    - gzip
+    - lzop
+    - nomarch
+    - p7zip
+    - pax
+    - rar
+    - rpm
+    - unrar
+    - unzip
+    - zip
+    - zoo
+
+- user: name=clamav groups=postfix
+- user: name=postfix groups=opendkim
+
+- name: configure postfix 
+  template: src=postfix/{{ item }}.cf dest=/etc/postfix/
+  with_items:
+    - main
+    - master
+  notify:
+    - restart postfix
+
+- name: create /etc/postfix/certs
+  file: state=directory path=/etc/postfix/certs
+
+- file: state=directory path=/var/spool/postfix/opendkim owner=opendkim
+
+- name: configure clamav-milter
+  template: src=clamav/clamav-milter.conf dest=/etc/clamav/
+  notify:
+    - restart clamav-milter
+  
+- name: configure opendkim
+  template: src=opendkim/opendkim.conf dest=/etc/
+  notify:
+    - restart opendkim
+  
+- service: name=clamav-daemon state=started
+- service: name=clamav-milter state=started
+- service: name=postfix state=started
+- service: name=opendkim state=started
+
+
+  

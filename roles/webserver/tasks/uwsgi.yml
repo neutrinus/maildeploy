@@ -1,0 +1,26 @@
+---
+- name: update apt repositories cache
+  apt: update_cache=yes cache_valid_time=14400
+
+- name: install packages
+  apt: pkg={{item}} state=installed
+  with_items:
+    - uwsgi
+    - uwsgi-plugin-python  
+    - php5
+    - php5-cli
+    - php5-cgi
+    - php5-pgsql
+    - uwsgi-plugin-php
+
+- template: src=etc/uwsgi/modoboa dest=/etc/uwsgi/apps-enabled/modoboa.ini
+  notify:
+    - restart uwsgi
+
+- template: src=etc/uwsgi/roundcube dest=/etc/uwsgi/apps-enabled/roundcube.ini
+  notify:
+    - restart uwsgi
+
+- name: check that uwsgi is running
+  service: name=uwsgi state=started
+

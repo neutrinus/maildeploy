@@ -1,0 +1,28 @@
+[uwsgi]
+#plugins = php
+chdir = /home/roundcube/app/roundcubemail-1.1.4
+chdir2 = /home/roundcube/app/roundcubemail-1.1.4
+
+master = true
+processes = 4
+socket = /home/roundcube/uwsgi.socket
+uid = roundcube
+gid = roundcube
+chown-socket = www-data:www-data
+post-buffering=8192
+#php-docroot = /home/roundcube/app/roundcubemail-1.1.4
+#php-index = index.php
+vacuum = true
+log-5xx=1
+no-orphans = true
+log-date = true
+auto-procname = true
+
+#check-static = /home/roundcube/app/roundcubemail-1.1.4
+plugin = cgi
+cgi = /home/roundcube/app/roundcubemail-1.1.4
+cgi-allowed-ext = .php
+cgi-helper = .php=php5-cgi
+cgi-index=index.php
+
+

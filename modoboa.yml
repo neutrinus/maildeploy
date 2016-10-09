@@ -1,0 +1,4 @@
+---
+- name: install modoboa on nodes
+  hosts: modoboa
+  roles: [modoboa]

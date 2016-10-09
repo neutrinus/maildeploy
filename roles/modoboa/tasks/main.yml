@@ -1,0 +1,55 @@
+- include: packages.yml
+
+- user: name=modoboa createhome=yes
+
+- apt: pkg={{item}} state=installed
+  with_items:
+    - libpq-dev
+   
+- name: install modoboa
+  pip: name={{item}} virtualenv=~modoboa/virtualenv/ state=latest
+  sudo: yes
+  sudo_user: modoboa
+  with_items:
+    - psycopg2
+    - modoboa
+
+- name: deploy application
+  command: /home/modoboa/virtualenv/bin/modoboa-admin.py deploy mailadmin --dburl default:postgres://modoboa:modoboa@localhost:5432/maildb --domain localhost
+  args:
+    chdir: /home/modoboa
+    creates: /home/modoboa/mailadmin 
+  sudo: yes
+  sudo_user: modoboa
+ 
+
+- name: generate postfix sql maps
+  command: /home/modoboa/virtualenv/bin/modoboa-admin.py postfix_maps --dburl postgres://modoboa:modoboa@localhost:5432/maildb /etc/postfix
+  args:
+    chdir: /home/modoboa
+    creates: /etc/postfix/sql-domains.cf
+
+- cron: name="modoboa clean logs"
+        minute="13"
+        hour="5"
+        user="modoboa"
+        job="/home/modoboa/virtualenv/bin/python /home/modoboa/mailadmin/manage.py cleanlogs"
+
+- cron: name="modoboa clean sessions"
+        minute="11"
+        hour="5"
+        user="modoboa"
+        job="/home/modoboa/virtualenv/bin/python /home/modoboa/mailadmin/manage.py clearsessions"
+
+- cron: name="modoboa clean sessions"
+        minute="9"
+        hour="5"
+        user="modoboa"
+        job="/home/modoboa/virtualenv/bin/python /home/modoboa/mailadmin/manage.py check_mx"
+
+
+
+
+
+# edit /home/modoboa/mailadmin/settings.py -> Allow_hosts = *
+# ./manage.py collectstatic

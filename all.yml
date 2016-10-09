@@ -1,0 +1,5 @@
+- include: postgresql.yml
+- include: mailserver.yml
+- include: modoboa.yml
+- include: webserver.yml
+

@@ -1,0 +1,14 @@
+---
+- include: postfix.yml
+- include: dovecot.yml
+
+
+- name: install packages
+  apt: pkg={{item}} state=installed
+  with_items:
+    - swaks
+ 
+- group: name=vmail state=present
+- user: name=vmail comment="Owner of virtual emails" uid=5000 group=vmail
+- file: path=/var/mail/vmail state=directory mode=0755 owner=vmail group=vmail
+

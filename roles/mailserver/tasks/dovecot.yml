@@ -1,0 +1,37 @@
+---
+
+- apt: pkg={{item}} state=installed
+  with_items:
+    - dovecot-imapd
+    - dovecot-pgsql
+    - dovecot-managesieved
+    - dovecot-sieve
+    - dovecot-antispam
+    - dovecot-lmtpd
+  notify:
+    - restart dovecot
+    
+    
+- name: configure dovecot
+  template: src=dovecot/conf.d/{{ item }} dest=/etc/dovecot/conf.d/
+  with_items:
+    - 10-mail.conf
+    - 10-auth.conf
+    - 10-master.conf
+    - 20-lmtp.conf
+    - 20-managesieve.conf
+    - auth-sql.conf.ext
+  notify:
+    - restart dovecot
+    
+- name: configure dovecot sql auth
+  template: src=dovecot/{{item}} dest=/etc/dovecot/
+  with_items:
+    - dovecot-sql.conf.ext
+    - dovecot.conf
+  notify:
+    - restart dovecot
+
+- name: check that dovecot is running
+  service: name=dovecot state=started
+

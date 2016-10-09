@@ -1,0 +1,15 @@
+[uwsgi]
+plugins = python
+chdir = /home/modoboa/mailadmin/
+home = /home/modoboa/virtualenv/
+module = mailadmin.wsgi:application
+master = true
+harakiri = 60
+processes = 4
+vhost = true
+no-default-app = true
+socket = /home/modoboa/uwsgi.socket
+uid = modoboa
+gid = modoboa
+chown-socket = www-data:www-data
+
